@@ -1,0 +1,32 @@
+---
+- name: Make workspace directory structure
+  file:
+    state: directory
+    path: "{{ workspace }}/{{ item }}"
+    recurse: yes
+  loop:
+    - bin/
+    - assets/
+
+- name: Get openshift clients
+  get_url:
+    url: "{{ item.url }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/{{ openshift.install_version }}/openshift-client-linux-{{ openshift.install_version }}.tar.gz", dest: "/tmp/oc.tar.gz" }
+    - { url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/{{ openshift.install_version }}/openshift-install-linux-{{ openshift.install_version }}.tar.gz", dest: "/tmp/openshift-install.tar.gz" }
+
+- name: Extract Openshift client
+  unarchive:
+    src: "/tmp/oc.tar.gz"
+    dest: "{{ workspace }}/bin/"
+    remote_src: yes
+    include:
+      - oc
+
+- name: Extract Openshift installer
+  unarchive:
+    src: "/tmp/openshift-install.tar.gz"
+    dest: "{{ workspace }}/bin/"
+    remote_src: yes
+
