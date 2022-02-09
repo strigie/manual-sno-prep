@@ -1,0 +1,24 @@
+apiVersion: v1
+baseDomain: {{ net.domain }}
+compute:
+- name: worker
+  replicas: 0
+controlPlane:
+  name: control
+  replicas: 1
+metadata:
+  name: {{ openshift.name }}
+networking:
+  networkType: OVNKubernetes
+  clusterNetwork:
+  - cidr: {{ net.cluster_cidr }}
+    hostPrefix: {{ net.cluster_prefx }}
+  serviceNetwork:
+  - {{ net.service }}
+platform:
+  none: {}
+bootstrapInPlace:
+  InstallationDisk: /dev/sda
+sshKey: |
+  {{ key.sshkey }}
+pullSecret: '{{ key.pullsecret | to_json}}'

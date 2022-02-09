@@ -1,0 +1,18 @@
+---
+- name: Template install-config.yaml
+  template:
+    src: install-config.yaml.j2
+    dest: "{{ workspace }}/{{ openshift.name }}/install-config.yaml"
+
+- name: Generate Manifests
+  command: "{{ workspace }}/bin/openshift-install create manifests --dir {{ workspace }}/{{ openshift.name }}"
+
+- name: Template 99_workload-partitioning.yaml
+  template:
+    src: 99_workload_partitioning.yaml.j2
+    dest: "{{ workspace }}/{{ openshift.name }}/manifests/99_workload_partitioning.yaml"
+
+- name: Template 10_inplace_dns.yaml
+  template:
+    src: 10_inplace_dns.yaml.j2
+    dest: "{{ workspace }}/{{ openshift.name }}/manifests/10_inplace_dns.yaml"

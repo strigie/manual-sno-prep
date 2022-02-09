@@ -1,0 +1,6 @@
+---
+- hosts: prep_host
+  roles:
+    - download
+    - configure
+      

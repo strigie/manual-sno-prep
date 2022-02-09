@@ -7,6 +7,7 @@
   loop:
     - bin/
     - assets/
+    - "{{ openshift.name }}/"
 
 - name: Get openshift clients
   get_url:
@@ -29,4 +30,20 @@
     src: "/tmp/openshift-install.tar.gz"
     dest: "{{ workspace }}/bin/"
     remote_src: yes
+    include:
+      - openshift-install
 
+- name: Get coreos info
+  command: "{{ workspace }}/bin/openshift-install coreos print-stream-json"
+  register: coreos
+
+- set_fact:
+     print_stream: "{{ coreos.stdout | from_json }}"
+
+- debug: msg="{{ print_stream.architectures.x86_64.artifacts.metal.formats.iso.disk.location }}"
+
+- name: Download ISO
+  get_url:
+    url: "{{ print_stream.architectures.x86_64.artifacts.metal.formats.iso.disk.location }}"
+    dest: "{{ workspace }}/assets/rhcos-live.iso"
+    checksum: "sha256:{{ print_stream.architectures.x86_64.artifacts.metal.formats.iso.disk.sha256 }}"

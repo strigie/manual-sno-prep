@@ -1,2 +1,2 @@
 [prep_host]
-localhost
+localhost ansible_connection=local

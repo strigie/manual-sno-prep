@@ -1,0 +1,69 @@
+{% macro dnsmasq() -%}
+address=/apps.{{ openshift.name }}.{{ net.domain }}/{{ openshift.sno_ip }}
+address=/api-int.{{ openshift.name }}.{{ net.domain }}/{{ openshift.sno_ip }}
+address=/api.{{ openshift.name }}.{{ net.domain }}/{{ openshift.sno_ip }}
+{%- endmacro %}
+{% macro nm() -%}
+export IP="{{ openshift.sno_ip }}"
+export BASE_RESOLV_CONF=/run/NetworkManager/resolv.conf
+if [ "$2" = "dhcp4-change" ] || [ "$2" = "dhcp6-change" ] || [ "$2" = "up" ] || [ "$2" = "connectivity-change" ]; then
+    if ! grep -q "$IP" /etc/resolv.conf; then
+      export TMP_FILE=$(mktemp /etc/forcedns_resolv.conf.XXXXXX)
+      cp  $BASE_RESOLV_CONF $TMP_FILE
+      chmod --reference=$BASE_RESOLV_CONF $TMP_FILE
+      sed -i -e "s/{{ openshift.name }}.{{ net.domain }}//" \
+      -e "s/search /& {{ openshift.name }}.{{ net.domain }} /" \
+      -e "0,/nameserver/s/nameserver/& $IP\n&/" $TMP_FILE
+      mv $TMP_FILE /etc/resolv.conf
+    fi
+fi
+{%- endmacro %}
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 10-inplace-dns
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,{{ dnsmasq() | b64encode }}
+        mode: 420
+        overwrite: true
+        path: /etc/dnsmasq.d/single-node.conf
+        user:
+          name: root
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,{{  nm() | b64encode }}
+        mode: 365
+        overwrite: true
+        path: /etc/NetworkManager/dispatcher.d/forcedns
+        user:
+          name: root
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,ClttYWluXQpyYy1tYW5hZ2VyPXVubWFuYWdlZAo=
+        mode: 420
+        overwrite: true
+        path: /etc/NetworkManager/conf.d/single-node.conf
+        user:
+          name: root
+    systemd:
+      units:
+      - contents: |
+          [Unit]
+          Description=Run dnsmasq to provide local dns for Single Node OpenShift
+          Before=kubelet.service crio.service
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/sbin/dnsmasq -k
+
+          [Install]
+          WantedBy=multi-user.target
+        enabled: true
+        name: dnsmasq.service

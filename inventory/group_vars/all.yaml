@@ -1,17 +1,19 @@
 ---
 openshift:
-  name: test6
-  install_version: 4.9.13
+  name: sno
+  install_version: 4.9.19
   coreos_version:  4.9.0
+  workload_cpuset: '0-3,16-19'
+  sno_ip: 10.19.142.249
 key:
   pullsecret: "{{ lookup('file', '../pull-secret.json') }}"
   sshkey: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
 # OpenShift Network
 net:
-  domain: ipv6.virtual.cluster.lab
-  cluster_cidr: fc01::/48
-  cluster_prefx: 64
-  service: fd02::/112
+  domain: cluster.lab
+  cluster_cidr: 10.97.0.0/16
+  cluster_prefx: 23
+  service: 10.96.0.0/16
 registry:
   user: openshift
   password: openshift
