@@ -2,7 +2,7 @@
 - name: Make workspace directory structure
   file:
     state: directory
-    path: "{{ workspace }}/{{ item }}"
+    path: "{{ workspace }}{{ item }}"
     recurse: yes
   loop:
     - bin/
@@ -45,5 +45,5 @@
 - name: Download ISO
   get_url:
     url: "{{ print_stream.architectures.x86_64.artifacts.metal.formats.iso.disk.location }}"
-    dest: "{{ workspace }}/assets/rhcos-live.iso"
+    dest: "/tmp/rhcos-live.iso"
     checksum: "sha256:{{ print_stream.architectures.x86_64.artifacts.metal.formats.iso.disk.sha256 }}"

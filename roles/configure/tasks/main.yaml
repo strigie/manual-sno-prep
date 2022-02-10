@@ -16,3 +16,27 @@
   template:
     src: 10_inplace_dns.yaml.j2
     dest: "{{ workspace }}/{{ openshift.name }}/manifests/10_inplace_dns.yaml"
+
+- name: Generate Single Node Ignition Config
+  command: "{{ workspace }}/bin/openshift-install create single-node-ignition-config --dir {{ workspace }}/{{ openshift.name }}"
+
+- name: Copy ISO
+  copy:
+    src: /tmp/rhcos-live.iso
+    dest: "{{ workspace }}/{{ openshift.name }}/sno-rhcos.iso"
+    remote_src: yes
+
+- name: Embed ignition into iso
+  containers.podman.podman_container:
+    name: coreos-installer
+    image: quay.io/coreos/coreos-installer:release
+    command: "iso ignition embed -fi /data/bootstrap-in-place-for-live-iso.ign /data/sno-rhcos.iso"
+    privileged: yes
+    volumes:
+      - /dev:/dev
+      - /run/udev:/run/udev
+      - "{{ workspace }}/{{ openshift.name }}:/data"
+    workdir: /data
+  register: output
+
+- debug: msg="{{ output }}"
